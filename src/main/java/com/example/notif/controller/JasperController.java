@@ -48,4 +48,16 @@ public class JasperController {
                 .contentLength(resource.contentLength())
                 .body(resource);
     }
+
+    @GetMapping("/product")
+    public ResponseEntity<ByteArrayResource> cetakProductImg() throws JRException, IOException {
+        ByteArrayResource resource = jasper.cetakProductWithImage();
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Disposition", "attachment; filename=" + "product.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(resource.contentLength())
+                .body(resource);
+    }
 }

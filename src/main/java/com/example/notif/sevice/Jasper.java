@@ -2,16 +2,21 @@ package com.example.notif.sevice;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 
 import com.example.notif.model.Nama;
+import com.example.notif.model.Product;
+import com.example.notif.repositories.ProductRepo;
 
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -33,6 +38,19 @@ public class Jasper {
 
     @Value("${jasper.bio.path}")
     private String jasperBioPath;
+
+    @Value("${jasper.product.path}")
+    private String jasperProductPath;
+
+    @Value("${logo.product.path}")
+    private String logoPath;
+
+    ProductRepo productRepo;
+
+    @Autowired
+    public Jasper(ProductRepo productRepo) {
+        this.productRepo = productRepo;
+    }
 
     public ByteArrayResource cetakTemplate() throws JRException {
         // Compile Jasper Report
@@ -97,6 +115,8 @@ public class Jasper {
 
         // Buat Parameter
         Date lahir = new Date(21, 3, 16);
+        // Calendar a = new Calendar.Builder().setDate(2001, 4, 16).build();
+
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("nama", "Radith");
         parameters.put("alamat", "Desa");
@@ -108,6 +128,26 @@ public class Jasper {
 
         // Buat empty DataSource
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(Collections.singletonList("Data"));
+
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        JasperExportManager.exportReportToPdfStream(jasperPrint, byteArrayOutputStream);
+        byte[] pdfBytes = byteArrayOutputStream.toByteArray();
+        return new ByteArrayResource(pdfBytes);
+    }
+
+    public ByteArrayResource cetakProductWithImage() throws JRException {
+        // Compile Jasper Report
+        JasperReport jasperReport = loadTemplate(jasperProductPath);
+
+        // Buat Parameter
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("logo", getClass().getResourceAsStream(logoPath));
+        parameters.put("title", "Product With Image");
+
+        // Buat DataSource dari db
+        List<Product> products = productRepo.findAll();
+        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(products);
 
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
